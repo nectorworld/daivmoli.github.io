@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🔐 Story Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #FF6B35; --pink: #FF6B9D; --purple: #C77DFF;
+    --blue: #4CC9F0; --green: #06D6A0; --yellow: #FFD93D;
+    --dark: #1a1a2e; --card: #16213e; --text: #e0e0e0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--dark);
+    min-height: 100vh;
+    color: var(--text);
+  }
+
+  /* ── Lock screen ── */
+  #lockScreen {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  }
+  .lock-card {
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 28px;
+    padding: 36px 28px;
+    width: 100%; max-width: 360px;
+    text-align: center;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .lock-icon { font-size: 3.5rem; margin-bottom: 12px; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .lock-card h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem; color: white; margin-bottom: 6px;
+  }
+  .lock-card p { font-size: 0.9rem; color: rgba(255,255,255,0.5); margin-bottom: 24px; }
+
+  .pin-input {
+    width: 100%; padding: 14px 18px;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 50px; color: white;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.1rem; font-weight: 700;
+    text-align: center; letter-spacing: 4px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .pin-input:focus { border-color: var(--orange); }
+  .pin-input::placeholder { letter-spacing: 1px; opacity: 0.4; }
+
+  .unlock-btn {
+    margin-top: 16px; width: 100%;
+    background: linear-gradient(135deg, var(--orange), var(--pink));
+    border: none; color: white;
+    font-family: 'Fredoka One', cursive; font-size: 1.2rem;
+    padding: 14px; border-radius: 50px; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(255,107,53,0.35);
+    transition: transform 0.15s;
+  }
+  .unlock-btn:active { transform: scale(0.97); }
+
+  .error-msg {
+    margin-top: 14px; color: var(--pink);
+    font-weight: 700; font-size: 0.9rem;
+    animation: shake 0.4s ease;
+    display: none;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  /* ── Admin panel ── */
+  #adminPanel { display: none; }
+
+  header {
+    background: linear-gradient(135deg, var(--orange), var(--pink));
+    padding: 18px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  header h1 { font-family: 'Fredoka One', cursive; color: white; font-size: 1.5rem; }
+  .logout-btn {
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    font-family: 'Fredoka One', cursive; font-size: 0.85rem;
+    padding: 6px 14px; border-radius: 50px; cursor: pointer;
+  }
+
+  main { max-width: 480px; margin: 0 auto; padding: 20px 16px 80px; }
+
+  .section-title {
+    font-family: 'Fredoka One', cursive; font-size: 1.3rem;
+    color: var(--yellow); margin: 24px 0 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* Upload card */
+  .upload-card {
+    background: rgba(255,255,255,0.05);
+    border: 2px dashed rgba(255,211,61,0.4);
+    border-radius: 22px; padding: 22px;
+    transition: border-color 0.2s;
+  }
+  .upload-card:hover { border-color: var(--yellow); }
+
+  .field-label { font-size: 0.85rem; font-weight: 700; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
+
+  .text-input {
+    width: 100%; padding: 12px 16px;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 14px; color: white;
+    font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 700;
+    outline: none; transition: border-color 0.2s; margin-bottom: 14px;
+  }
+  .text-input:focus { border-color: var(--orange); }
+  .text-input::placeholder { color: rgba(255,255,255,0.25); font-weight: 400; }
+
+  .file-pick {
+    display: flex; flex-direction: column; align-items: center;
+    cursor: pointer; padding: 20px;
+    background: rgba(255,255,255,0.04); border-radius: 14px;
+    border: 2px dashed rgba(255,255,255,0.1);
+    transition: background 0.2s, border-color 0.2s;
+    margin-bottom: 14px;
+  }
+  .file-pick:hover { background: rgba(255,255,255,0.08); border-color: var(--orange); }
+  .file-pick-icon { font-size: 2.2rem; margin-bottom: 6px; animation: bounce 2s ease-in-out infinite; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  .file-pick strong { color: white; font-size: 0.95rem; }
+  .file-pick span { font-size: 0.8rem; color: rgba(255,255,255,0.35); margin-top: 3px; }
+  #pdfFileInput { display: none; }
+  .file-chosen { color: var(--green); font-size: 0.85rem; font-weight: 700; text-align: center; margin-bottom: 10px; }
+
+  /* Emoji picker */
+  .emoji-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .emoji-opt {
+    font-size: 1.6rem; cursor: pointer; padding: 6px;
+    border-radius: 10px; border: 2px solid transparent;
+    transition: border-color 0.15s, transform 0.15s;
+    background: rgba(255,255,255,0.05);
+  }
+  .emoji-opt.selected { border-color: var(--orange); transform: scale(1.15); background: rgba(255,107,53,0.12); }
+
+  .add-btn {
+    width: 100%; padding: 15px;
+    background: linear-gradient(135deg, var(--green), var(--blue));
+    border: none; color: white;
+    font-family: 'Fredoka One', cursive; font-size: 1.2rem;
+    border-radius: 50px; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(6,214,160,0.3);
+    transition: transform 0.15s;
+  }
+  .add-btn:active { transform: scale(0.97); }
+  .add-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* Instructions */
+  .instructions {
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 18px; padding: 18px;
+  }
+  .instructions h3 { font-family: 'Fredoka One', cursive; color: var(--blue); font-size: 1.1rem; margin-bottom: 10px; }
+  .step { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+  .step-num {
+    background: var(--orange); color: white;
+    font-family: 'Fredoka One', cursive; font-size: 0.8rem;
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step p { font-size: 0.88rem; line-height: 1.5; color: rgba(255,255,255,0.7); }
+  .step code {
+    background: rgba(255,255,255,0.1); color: var(--yellow);
+    padding: 1px 6px; border-radius: 5px; font-size: 0.82rem;
+  }
+
+  /* Story list */
+  .admin-story {
+    background: rgba(255,255,255,0.05);
+    border-radius: 16px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px; border-left: 4px solid var(--purple);
+  }
+  .admin-story:nth-child(2n) { border-left-color: var(--blue); }
+  .admin-story .info { flex: 1; min-width: 0; }
+  .admin-story .info h4 { font-size: 0.95rem; font-weight: 800; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .admin-story .info .meta { font-size: 0.75rem; color: rgba(255,255,255,0.35); margin-top: 2px; }
+  .del-btn {
+    background: rgba(255,107,157,0.15); border: none; color: var(--pink);
+    font-size: 1rem; padding: 6px 10px; border-radius: 10px; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .del-btn:hover { background: rgba(255,107,157,0.3); }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: linear-gradient(135deg, var(--green), var(--blue));
+    color: white; font-family: 'Fredoka One', cursive; font-size: 1rem;
+    padding: 12px 24px; border-radius: 50px; z-index: 200;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    transition: transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Copy box */
+  .copy-box {
+    background: rgba(0,0,0,0.3); border-radius: 10px;
+    padding: 10px 14px; margin-top: 8px;
+    font-size: 0.8rem; color: var(--yellow);
+    font-family: monospace; word-break: break-all;
+    border: 1px solid rgba(255,211,61,0.2);
+  }
+
+  .empty-list { color: rgba(255,255,255,0.25); font-size: 0.9rem; text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+
+<!-- Lock Screen -->
+<div id="lockScreen">
+  <div class="lock-card">
+    <div class="lock-icon">🔐</div>
+    <h1>Parent Admin</h1>
+    <p>Enter your password to manage stories</p>
+    <input class="pin-input" type="password" id="pinInput" placeholder="Enter password"
+      onkeydown="if(event.key==='Enter') tryUnlock()">
+    <button class="unlock-btn" onclick="tryUnlock()">🚀 Enter</button>
+    <div class="error-msg" id="errorMsg">❌ Wrong password, try again!</div>
+  </div>
+</div>
+
+<!-- Admin Panel -->
+<div id="adminPanel">
+  <header>
+    <h1>🛠️ Story Manager</h1>
+    <button class="logout-btn" onclick="logout()">🔒 Lock</button>
+  </header>
+
+  <main>
+
+    <!-- Add story -->
+    <div class="section-title">➕ Add New Story</div>
+    <div class="upload-card">
+
+      <div class="field-label">STORY TITLE</div>
+      <input class="text-input" id="storyTitle" type="text" placeholder="e.g. The Dragon's Quest">
+
+      <div class="field-label">PICK EMOJI</div>
+      <div class="emoji-row" id="emojiRow">
+        🦁 🐉 🧙 🦄 🐬 🦊 🚀 🌊 🏰 🌺 🐧 🦋 🐺 🦅 🐳
+      </div>
+
+      <div class="field-label">PDF FILE</div>
+      <label class="file-pick" for="pdfFileInput">
+        <span class="file-pick-icon">📄</span>
+        <strong>Tap to choose PDF</strong>
+        <span>from your device</span>
+      </label>
+      <input type="file" id="pdfFileInput" accept="application/pdf" onchange="onFileChosen(this)">
+      <div class="file-chosen" id="fileChosen" style="display:none"></div>
+
+      <button class="add-btn" id="addBtn" onclick="addStory()">✨ Add to Story List</button>
+    </div>
+
+    <!-- Stories list -->
+    <div class="section-title">📚 Current Stories</div>
+    <div id="adminStoryList"><div class="empty-list">No stories yet</div></div>
+
+    <!-- Instructions -->
+    <div class="section-title">📋 How to Publish</div>
+    <div class="instructions">
+      <h3>🚀 GitHub Pages Setup (one time)</h3>
+      <div class="step">
+        <div class="step-num">1</div>
+        <p>Go to <strong>github.com</strong>, create a free account, then create a new repository named <code>my-story-corner</code> (set it Public)</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <p>Upload <code>index.html</code>, <code>admin.html</code>, and <code>stories.json</code> to the repo root</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <p>Create a folder called <code>stories/</code> and upload your PDF files there</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <p>Go to repo <strong>Settings → Pages</strong>, set source to <code>main</code> branch. Your site will be live at:<br>
+        <code>https://YOUR-USERNAME.github.io/my-story-corner</code></p>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <p>Each time you add a story here, download the new <code>stories.json</code> and re-upload it to GitHub along with the new PDF file in the <code>stories/</code> folder</p>
+      </div>
+
+      <h3 style="margin-top:16px;">📱 Day-to-day workflow</h3>
+      <div class="step">
+        <div class="step-num">→</div>
+        <p>Add story here → tap <strong>"Download stories.json"</strong> → upload it + the PDF to GitHub. Done! Kids see it instantly.</p>
+      </div>
+    </div>
+
+    <!-- Download JSON -->
+    <div class="section-title">💾 Export</div>
+    <button class="add-btn" onclick="downloadJSON()" style="background: linear-gradient(135deg,var(--purple),var(--blue))">
+      ⬇️ Download stories.json
+    </button>
+    <p style="font-size:0.8rem;color:rgba(255,255,255,0.3);margin-top:8px;text-align:center;">Upload this file to GitHub after every update</p>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const PASSWORD = 'jaipur10190';
+  const EMOJIS = ['🦁','🐉','🧙','🦄','🐬','🦊','🚀','🌊','🏰','🌺','🐧','🦋','🐺','🦅','🐳'];
+  let selectedEmoji = EMOJIS[0];
+  let chosenFile = null;
+  let stories = JSON.parse(localStorage.getItem('adminStories') || '[]');
+
+  // Build emoji row
+  const emojiRow = document.getElementById('emojiRow');
+  emojiRow.innerHTML = EMOJIS.map((e,i) =>
+    `<span class="emoji-opt${i===0?' selected':''}" onclick="selectEmoji(this,'${e}')">${e}</span>`
+  ).join('');
+
+  function selectEmoji(el, e) {
+    document.querySelectorAll('.emoji-opt').forEach(x => x.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedEmoji = e;
+  }
+
+  function onFileChosen(input) {
+    if (input.files[0]) {
+      chosenFile = input.files[0];
+      const fc = document.getElementById('fileChosen');
+      fc.style.display = 'block';
+      fc.textContent = '✅ ' + chosenFile.name;
+    }
+  }
+
+  function tryUnlock() {
+    const val = document.getElementById('pinInput').value;
+    if (val === PASSWORD) {
+      document.getElementById('lockScreen').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'block';
+      renderAdminList();
+    } else {
+      const err = document.getElementById('errorMsg');
+      err.style.display = 'block';
+      err.style.animation = 'none';
+      void err.offsetWidth;
+      err.style.animation = 'shake 0.4s ease';
+      document.getElementById('pinInput').value = '';
+    }
+  }
+
+  function logout() {
+    document.getElementById('lockScreen').style.display = 'flex';
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('pinInput').value = '';
+  }
+
+  function addStory() {
+    const title = document.getElementById('storyTitle').value.trim();
+    if (!title) { showToast('⚠️ Please enter a title!'); return; }
+    if (!chosenFile) { showToast('⚠️ Please choose a PDF!'); return; }
+
+    const btn = document.getElementById('addBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Adding...';
+
+    // We only save filename reference — actual PDF must be uploaded to GitHub
+    const story = {
+      title,
+      emoji: selectedEmoji,
+      file: sanitizeFilename(chosenFile.name),
+      date: new Date().toISOString().split('T')[0],
+      originalFile: chosenFile.name
+    };
+
+    stories.unshift(story);
+    saveStories();
+    renderAdminList();
+
+    // Reset form
+    document.getElementById('storyTitle').value = '';
+    document.getElementById('fileChosen').style.display = 'none';
+    document.getElementById('pdfFileInput').value = '';
+    chosenFile = null;
+    btn.disabled = false;
+    btn.textContent = '✨ Add to Story List';
+
+    showToast('📖 Story added! Now download stories.json and upload with PDF to GitHub.');
+  }
+
+  function sanitizeFilename(name) {
+    return name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  }
+
+  function deleteStory(i) {
+    if (!confirm('Remove "' + stories[i].title + '"?')) return;
+    stories.splice(i, 1);
+    saveStories();
+    renderAdminList();
+    showToast('🗑️ Story removed');
+  }
+
+  function saveStories() {
+    localStorage.setItem('adminStories', JSON.stringify(stories));
+  }
+
+  function renderAdminList() {
+    const el = document.getElementById('adminStoryList');
+    if (!stories.length) {
+      el.innerHTML = '<div class="empty-list">No stories yet</div>';
+      return;
+    }
+    el.innerHTML = stories.map((s, i) => `
+      <div class="admin-story">
+        <span style="font-size:1.8rem">${s.emoji}</span>
+        <div class="info">
+          <h4>${escHtml(s.title)}</h4>
+          <div class="meta">${s.date} · ${escHtml(s.file)}</div>
+        </div>
+        <button class="del-btn" onclick="deleteStory(${i})">🗑️</button>
+      </div>
+    `).join('');
+  }
+
+  function downloadJSON() {
+    if (!stories.length) { showToast('⚠️ No stories to export yet!'); return; }
+    // Export clean version for public site
+    const pub = stories.map(s => ({
+      title: s.title,
+      emoji: s.emoji,
+      file: s.file,
+      date: s.date
+    }));
+    const blob = new Blob([JSON.stringify(pub, null, 2)], {type: 'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'stories.json';
+    a.click();
+    showToast('✅ stories.json downloaded!');
+  }
+
+  function escHtml(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // Enter key on password
+  document.getElementById('pinInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') tryUnlock();
+  });
+</script>
+</body>
+</html>
